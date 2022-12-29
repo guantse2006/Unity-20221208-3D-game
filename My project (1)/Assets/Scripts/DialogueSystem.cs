@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using TMPro;
 using System.Collections;
+using UnityEngine.InputSystem;
+using UnityEngine.Events;
 
 namespace KID
 {
@@ -22,6 +24,10 @@ namespace KID
         private TextMeshProUGUI textContent;
         private GameObject goTriangle;
 
+        private PlayerInput playerInput;
+
+        private UnityEvent onDialogueFinish;
+
         private void Awake()
         {
             groupDialogue = GameObject.Find("畫布對話系統").GetComponent<CanvasGroup>();
@@ -30,8 +36,22 @@ namespace KID
             goTriangle = GameObject.Find("對話完成圖示");
             goTriangle.SetActive(false);
 
+            playerInput = GameObject.Find("PlayerCapsule").GetComponent<PlayerInput>();
+
+            StartDialogue(dialogueOpening);
+        }
+
+        /// <summary>
+        /// 開始對話
+        /// </summary>
+        /// <param name="data">要執行的對話資料</param>
+        /// <param name="_onDialogueFinish">對話結束後的事件，可以空值</param>
+        public void StartDialogue(DialogueData data, UnityEvent _onDialogueFinish = null)
+        {
+            playerInput.enabled = false;
             StartCoroutine(FadeGroup());
-            StartCoroutine(TypeEffect());
+            StartCoroutine(TypeEffect(data));
+            onDialogueFinish = _onDialogueFinish;
         }
 
         /// <summary>
@@ -48,16 +68,16 @@ namespace KID
             }
         }
 
-        private IEnumerator TypeEffect()
+        private IEnumerator TypeEffect(DialogueData data)
         {
-            textName.text = dialogueOpening.dialogueName;
+            textName.text = data.dialogueName;
 
-            for (int j = 0; j < dialogueOpening.dialogueContents.Length; j++)
+            for (int j = 0; j < data.dialogueContents.Length; j++)
             {         
                 textContent.text = "";
                 goTriangle.SetActive(false);
 
-                string dialogue = dialogueOpening.dialogueContents[j];
+                string dialogue = data.dialogueContents[j];
 
                 for (int i = 0; i < dialogue.Length; i++)
                 {
@@ -77,6 +97,11 @@ namespace KID
             }
 
             StartCoroutine(FadeGroup(false));
+
+            playerInput.enabled = true;
+
+            // ?. 當 onDialogueFinish 沒有值時不執行
+            onDialogueFinish?.Invoke();
         }
     }
 }
